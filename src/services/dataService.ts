@@ -139,7 +139,8 @@ export class DataService {
   static async getTurmas(): Promise<Turma[]> {
     try {
       const snapshot = await getDocs(collection(db, 'turmas'));
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Turma));
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Turma))
+        .sort((a, b) => a.nome.localeCompare(b.nome));
     } catch (err) {
       handleFirestoreError(err, OperationType.LIST, 'turmas');
       return [];
@@ -195,7 +196,8 @@ export class DataService {
   static async getAlunos(): Promise<Aluno[]> {
     try {
       const snapshot = await getDocs(collection(db, 'alunos'));
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Aluno));
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Aluno))
+        .sort((a, b) => a.nome.localeCompare(b.nome));
     } catch (err) {
       handleFirestoreError(err, OperationType.LIST, 'alunos');
       return [];
@@ -266,7 +268,7 @@ export class DataService {
     }
   }
 
-  static async setFrequencia(frequencia: Partial<Frequencia> & { aluno_id: string, data_aula: string }): Promise<Frequencia> {
+  static async setFrequencia(frequencia: Partial<Frequencia> & { aluno_id: string, data_aula: string }): Promise<Frequencia | null> {
     try {
       const q = query(
         collection(db, 'frequencias'), 
@@ -277,6 +279,13 @@ export class DataService {
       
       if (!snapshot.empty) {
         const existingDoc = snapshot.docs[0];
+        
+        // Se o status for vazio, APAGA o documento para limpar o banco
+        if (!frequencia.status) {
+          await deleteDoc(existingDoc.ref);
+          return null;
+        }
+
         const updates = {
           status: frequencia.status || '',
           justificativa: frequencia.justificativa || '',
@@ -285,6 +294,8 @@ export class DataService {
         await updateDoc(existingDoc.ref, updates);
         return { id: existingDoc.id, ...existingDoc.data(), ...updates } as Frequencia;
       } else {
+        if (!frequencia.status) return null; // Não cria doc vazio
+
         const newRef = doc(collection(db, 'frequencias'));
         const newFreq = {
           aluno_id: frequencia.aluno_id,

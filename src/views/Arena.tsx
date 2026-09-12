@@ -119,18 +119,6 @@ export function ArenaView() {
     await saveStatus(aluno, data_aula, nextStatus);
   };
 
-  const handleCellDoubleClick = async (aluno: Aluno, data_aula: string) => {
-    // Permite apagar o registro completamente (útil para testes)
-    const dAula = new Date(data_aula);
-    const dMatricula = new Date(aluno.matricula);
-    const dVenc = new Date(aluno.vencimento);
-    if (dAula < dMatricula || dAula > dVenc) return;
-
-    if (window.confirm(`Deseja APAGAR o registro de frequência de ${aluno.nome} do dia ${formatDataBR(data_aula)}?`)) {
-       await saveStatus(aluno, data_aula, '' as PresencaStatus);
-    }
-  };
-
   const saveStatus = async (aluno: Aluno, data_aula: string, status: PresencaStatus, justificativa = '') => {
     const hora = (status === 'P' || status === 'A') ? getCurrentTime() : '';
     
@@ -347,35 +335,39 @@ export function ArenaView() {
                             key={sat} 
                             className="border-r border-white/10 p-0 text-center relative h-12 cursor-pointer select-none group/cell" 
                             onClick={() => isAtivo && handleCellClick(a, sat)}
-                            onDoubleClick={() => isAtivo && handleCellDoubleClick(a, sat)}
                          >
                            {!isAtivo ? (
                               <div className="flex items-center justify-center w-full h-full">
                                 <span className="bg-red-900/40 text-red-400 text-[10px] px-1.5 py-0.5 rounded border border-red-500/30">N/M</span>
                               </div>
                            ) : (
-                              renderStatus(getFreq(a.id, sat)?.status)
-                           )}
-                           
-                           {/* Overlay para Apagar e Hora (visível apenas quando há status e em hover da célula) */}
-                           {isAtivo && getFreq(a.id, sat)?.status && (
-                             <div className="absolute inset-0 bg-black/95 flex flex-col items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-opacity z-10">
-                               {getFreq(a.id, sat)?.hora && (
-                                 <span className="text-[9px] text-tsunami-cyan font-mono mb-0.5">
-                                   {getFreq(a.id, sat)?.hora}
-                                 </span>
-                               )}
-                               <button 
-                                 onClick={(e) => {
-                                   e.stopPropagation(); // Impede que o clique dispare o ciclo normal da célula
-                                   handleCellDoubleClick(a, sat);
-                                 }}
-                                 className="text-[9px] bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500 hover:text-white px-1.5 py-0.5 rounded transition-colors uppercase font-bold"
-                                 title="Apagar Registro"
-                               >
-                                 Apagar
-                               </button>
-                             </div>
+                              <>
+                                {renderStatus(getFreq(a.id, sat)?.status)}
+                                
+                                {/* Hora da batida no rodapé da célula se houver */}
+                                {getFreq(a.id, sat)?.hora && (
+                                  <span className="absolute bottom-0 left-0 right-0 text-center text-[8px] text-white/50 font-mono pb-0.5 pointer-events-none">
+                                    {getFreq(a.id, sat)?.hora}
+                                  </span>
+                                )}
+
+                                {/* Botão X para apagar (visível sempre que houver status, sutil) */}
+                                {getFreq(a.id, sat)?.status && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      saveStatus(a, sat, '' as PresencaStatus);
+                                    }}
+                                    className="absolute top-0 right-0 p-1 text-white/20 hover:text-red-400 z-10 transition-colors"
+                                    title="Apagar Frequência"
+                                  >
+                                    <svg viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                  </button>
+                                )}
+                              </>
                            )}
                          </td>
                        );
