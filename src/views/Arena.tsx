@@ -119,6 +119,18 @@ export function ArenaView() {
     await saveStatus(aluno, data_aula, nextStatus);
   };
 
+  const handleCellDoubleClick = async (aluno: Aluno, data_aula: string) => {
+    // Permite apagar o registro completamente (útil para testes)
+    const dAula = new Date(data_aula);
+    const dMatricula = new Date(aluno.matricula);
+    const dVenc = new Date(aluno.vencimento);
+    if (dAula < dMatricula || dAula > dVenc) return;
+
+    if (window.confirm(`Deseja APAGAR o registro de frequência de ${aluno.nome} do dia ${formatDataBR(data_aula)}?`)) {
+       await saveStatus(aluno, data_aula, '' as PresencaStatus);
+    }
+  };
+
   const saveStatus = async (aluno: Aluno, data_aula: string, status: PresencaStatus, justificativa = '') => {
     const hora = (status === 'P' || status === 'A') ? getCurrentTime() : '';
     
@@ -331,7 +343,12 @@ export function ArenaView() {
                        const isAtivo = dAula >= dMatricula && dAula <= dVenc;
                        
                        return (
-                         <td key={sat} className="border-r border-white/10 p-0 text-center relative h-12 cursor-pointer select-none" onClick={() => isAtivo && handleCellClick(a, sat)}>
+                         <td 
+                            key={sat} 
+                            className="border-r border-white/10 p-0 text-center relative h-12 cursor-pointer select-none group/cell" 
+                            onClick={() => isAtivo && handleCellClick(a, sat)}
+                            onDoubleClick={() => isAtivo && handleCellDoubleClick(a, sat)}
+                         >
                            {!isAtivo ? (
                               <div className="flex items-center justify-center w-full h-full">
                                 <span className="bg-red-900/40 text-red-400 text-[10px] px-1.5 py-0.5 rounded border border-red-500/30">N/M</span>
@@ -339,10 +356,25 @@ export function ArenaView() {
                            ) : (
                               renderStatus(getFreq(a.id, sat)?.status)
                            )}
-                           {/* Hora da batida visível no hover se P ou A */}
-                           {getFreq(a.id, sat)?.hora && (
-                             <div className="absolute inset-0 bg-black/90 text-[10px] text-tsunami-cyan flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity font-mono">
-                               {getFreq(a.id, sat)?.hora}
+                           
+                           {/* Overlay para Apagar e Hora (visível apenas quando há status e em hover da célula) */}
+                           {isAtivo && getFreq(a.id, sat)?.status && (
+                             <div className="absolute inset-0 bg-black/95 flex flex-col items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-opacity z-10">
+                               {getFreq(a.id, sat)?.hora && (
+                                 <span className="text-[9px] text-tsunami-cyan font-mono mb-0.5">
+                                   {getFreq(a.id, sat)?.hora}
+                                 </span>
+                               )}
+                               <button 
+                                 onClick={(e) => {
+                                   e.stopPropagation(); // Impede que o clique dispare o ciclo normal da célula
+                                   handleCellDoubleClick(a, sat);
+                                 }}
+                                 className="text-[9px] bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500 hover:text-white px-1.5 py-0.5 rounded transition-colors uppercase font-bold"
+                                 title="Apagar Registro"
+                               >
+                                 Apagar
+                               </button>
                              </div>
                            )}
                          </td>
