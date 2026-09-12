@@ -1,0 +1,132 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isAdmin() {
+      // In this app, anyone logged in is effectively a trainer/admin for data right now, 
+      // but let's implement the blueprint checking the users collection.
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isTrainer() {
+      // Allow any signed-in user for now since the app is fully local and trainers need full access
+      return isSignedIn();
+    }
+
+    // 3. Validation Blueprints
+    function isValidUser(data) {
+      return data.keys().hasAll(['nome', 'role', 'email'])
+          && data.nome is string && data.nome.size() <= 100
+          && data.role is string && (data.role == 'admin' || data.role == 'treinador' || data.role == 'assistente')
+          && data.email is string && data.email.size() <= 100;
+    }
+
+    function isValidTurma(data) {
+      return data.keys().hasAll(['nome', 'inicio', 'fim', 'vagas', 'dias'])
+          && data.nome is string && data.nome.size() <= 100
+          && data.inicio is string && data.inicio.size() <= 10
+          && data.fim is string && data.fim.size() <= 10
+          && data.vagas is number
+          && data.dias is list && data.dias.size() <= 7 && (data.dias.size() == 0 || data.dias[0] is string);
+    }
+
+    function isValidAluno(data) {
+      return data.keys().hasAll(['nome', 'turma_id', 'matricula', 'vencimento', 'nivel'])
+          && data.nome is string && data.nome.size() <= 100
+          && data.turma_id is string && data.turma_id.size() <= 128
+          && data.matricula is string && data.matricula.size() <= 15
+          && data.vencimento is string && data.vencimento.size() <= 15
+          && data.nivel is number
+          && (!('turma_nome' in data.keys()) || (data.turma_nome is string && data.turma_nome.size() <= 100))
+          && (!('face_data' in data.keys()) || (data.face_data is string && data.face_data.size() <= 1000000));
+    }
+
+    function isValidFrequencia(data) {
+      return data.keys().hasAll(['aluno_id', 'data_aula', 'status'])
+          && data.aluno_id is string && data.aluno_id.size() <= 128
+          && data.data_aula is string && data.data_aula.size() <= 15
+          && data.status is string && data.status.size() <= 5
+          && (!('aluno_nome' in data.keys()) || (data.aluno_nome is string && data.aluno_nome.size() <= 100))
+          && (!('justificativa' in data.keys()) || (data.justificativa is string && data.justificativa.size() <= 500))
+          && (!('hora' in data.keys()) || (data.hora is string && data.hora.size() <= 15));
+    }
+
+    // 4. Collection Rules
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isSignedIn();
+      allow list: if isSignedIn(); // Allow listing users for the auth system check
+      
+      allow create: if isValidId(userId) && isSignedIn()
+          && request.auth.uid == userId
+          && isValidUser(incoming());
+          
+      allow update: if isValidId(userId) && isSignedIn()
+          && request.auth.uid == userId
+          && isValidUser(incoming());
+          
+      allow delete: if false; // Users shouldn't be deleted from client
+    }
+
+    match /turmas/{turmaId} {
+      allow get: if isValidId(turmaId) && isTrainer();
+      allow list: if isTrainer();
+      
+      allow create: if isValidId(turmaId) && isTrainer()
+          && isValidTurma(incoming());
+          
+      allow update: if isValidId(turmaId) && isTrainer()
+          && isValidTurma(incoming());
+          
+      allow delete: if isValidId(turmaId) && isTrainer();
+    }
+
+    match /alunos/{alunoId} {
+      allow get: if isValidId(alunoId) && isTrainer();
+      allow list: if isTrainer();
+      
+      allow create: if isValidId(alunoId) && isTrainer()
+          && isValidAluno(incoming());
+          
+      allow update: if isValidId(alunoId) && isTrainer()
+          && isValidAluno(incoming());
+          
+      allow delete: if isValidId(alunoId) && isTrainer();
+    }
+
+    match /frequencias/{frequenciaId} {
+      allow get: if isValidId(frequenciaId) && isTrainer();
+      allow list: if isTrainer();
+      
+      allow create: if isValidId(frequenciaId) && isTrainer()
+          && isValidFrequencia(incoming());
+          
+      allow update: if isValidId(frequenciaId) && isTrainer()
+          && isValidFrequencia(incoming());
+          
+      allow delete: if isValidId(frequenciaId) && isTrainer();
+    }
+  }
+}

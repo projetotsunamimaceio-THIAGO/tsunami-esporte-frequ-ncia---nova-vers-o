@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+@theme {
+  --color-tsunami-bg: #07080f;
+  --color-tsunami-panel: #0a0c16;
+  --color-tsunami-cyan: #00ffff;
+  --color-tsunami-fuchsia: #e040fb;
+  --color-tsunami-violet: #8b5cf6;
+  --color-tsunami-emerald: #00e676;
+  --color-tsunami-blue: #2563eb;
+  
+  --animate-orbital: orbital 10s linear infinite;
+  --animate-scanline: scanline 2s linear infinite;
+  --animate-pulse-glow: pulseGlow 2s ease-in-out infinite;
+}
+
+@keyframes orbital {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 0.7;
+    filter: brightness(1.2);
+  }
+}
+
+body {
+  background-color: var(--color-tsunami-bg);
+  color: #e2e8f0;
+}
+
+/* Custom Scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 255, 0.2);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 255, 255, 0.5);
+}
+
+.glass-panel {
+  @apply bg-white/5 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl;
+}
+
+.neon-border-cyan {
+  @apply border-tsunami-cyan/40 shadow-[0_0_10px_rgba(0,255,255,0.2)];
+}
+.neon-border-fuchsia {
+  @apply border-tsunami-fuchsia/40 shadow-[0_0_10px_rgba(224,64,251,0.2)];
+}
+.neon-border-violet {
+  @apply border-tsunami-violet/40 shadow-[0_0_10px_rgba(139,92,246,0.2)];
+}
+.neon-border-emerald {
+  @apply border-tsunami-emerald/40 shadow-[0_0_10px_rgba(0,230,118,0.2)];
+}
+
+.neon-text-cyan {
+  @apply text-tsunami-cyan drop-shadow-[0_0_5px_rgba(0,255,255,0.8)];
+}
+.neon-text-fuchsia {
+  @apply text-tsunami-fuchsia drop-shadow-[0_0_5px_rgba(224,64,251,0.8)];
+}
+.neon-text-emerald {
+  @apply text-tsunami-emerald drop-shadow-[0_0_5px_rgba(0,230,118,0.8)];
+}

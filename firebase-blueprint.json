@@ -1,0 +1,79 @@
+{
+  "entities": {
+    "user": {
+      "title": "User",
+      "description": "User profile with role-based access control.",
+      "type": "object",
+      "properties": {
+        "nome": { "type": "string", "maxLength": 100 },
+        "role": { "type": "string", "enum": ["admin", "treinador", "assistente"] },
+        "email": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["nome", "role"]
+    },
+    "turma": {
+      "title": "Turma",
+      "description": "Class or group of students.",
+      "type": "object",
+      "properties": {
+        "nome": { "type": "string", "maxLength": 100 },
+        "inicio": { "type": "string", "maxLength": 10 },
+        "fim": { "type": "string", "maxLength": 10 },
+        "vagas": { "type": "number" },
+        "dias": {
+          "type": "array",
+          "items": { "type": "string" },
+          "maxLength": 7
+        }
+      },
+      "required": ["nome", "inicio", "fim", "vagas", "dias"]
+    },
+    "aluno": {
+      "title": "Aluno",
+      "description": "Student details.",
+      "type": "object",
+      "properties": {
+        "nome": { "type": "string", "maxLength": 100 },
+        "turma_id": { "type": "string", "maxLength": 128 },
+        "turma_nome": { "type": "string", "maxLength": 100 },
+        "matricula": { "type": "string", "maxLength": 15 },
+        "vencimento": { "type": "string", "maxLength": 15 },
+        "nivel": { "type": "number" },
+        "face_data": { "type": "string" }
+      },
+      "required": ["nome", "turma_id", "matricula", "vencimento", "nivel"]
+    },
+    "frequencia": {
+      "title": "Frequencia",
+      "description": "Attendance record for a student on a specific date.",
+      "type": "object",
+      "properties": {
+        "aluno_id": { "type": "string", "maxLength": 128 },
+        "aluno_nome": { "type": "string", "maxLength": 100 },
+        "data_aula": { "type": "string", "maxLength": 15 },
+        "status": { "type": "string", "maxLength": 5 },
+        "justificativa": { "type": "string", "maxLength": 500 },
+        "hora": { "type": "string", "maxLength": 15 }
+      },
+      "required": ["aluno_id", "data_aula", "status"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": { "$ref": "#/entities/user" },
+      "description": "User profiles"
+    },
+    "turmas/{turmaId}": {
+      "schema": { "$ref": "#/entities/turma" },
+      "description": "Classes"
+    },
+    "alunos/{alunoId}": {
+      "schema": { "$ref": "#/entities/aluno" },
+      "description": "Students"
+    },
+    "frequencias/{frequenciaId}": {
+      "schema": { "$ref": "#/entities/frequencia" },
+      "description": "Attendance records"
+    }
+  }
+}

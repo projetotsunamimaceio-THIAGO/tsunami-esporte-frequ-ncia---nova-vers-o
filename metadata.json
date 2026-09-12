@@ -1,0 +1,10 @@
+{
+  "name": "TSUNAMI - Gestão & Frequência",
+  "description": "Sistema de gestão esportiva com estética Cyberpunk/Dark Glassmorphism.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
